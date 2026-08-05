@@ -1,0 +1,21 @@
+# Target build directories
+**/target/
+**/node_modules/
+**/dist/
+**/build/
+
+# IDE specific files
+.idea/
+*.iml
+.vscode/
+.junie/
+.classpath
+.project
+.settings/
+
+# Log files
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
