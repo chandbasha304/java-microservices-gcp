@@ -410,7 +410,7 @@ export default function App() {
     <div className="app-container">
       {/* Dynamic Navigation Bar */}
       <header className="navbar">
-        <div className="logo">Security JWT Hub</div>
+        <div className="logo">Security JWT & Microservices Hub</div>
         {auth && (
           <div className="nav-user">
             <div className="user-card">
@@ -427,6 +427,77 @@ export default function App() {
           </div>
         )}
       </header>
+
+      {/* Architecture & Topics Coverage Showcase Panel */}
+      <div style={{ padding: '0 40px', marginTop: '20px' }}>
+        <details className="glass-panel" style={{ padding: '16px 24px', borderRadius: '12px', cursor: 'pointer' }}>
+          <summary style={{ fontSize: '1.05rem', fontWeight: 'bold', color: 'var(--accent-cyan)', outline: 'none' }}>
+            🛠️ Implemented Architecture & Cheat-Sheet Topics Showcase (Click to expand 70+ topics)
+          </summary>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginTop: '16px', fontSize: '0.85rem' }}>
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', borderLeft: '3px solid #38bdf8' }}>
+              <h4 style={{ margin: '0 0 8px 0', color: '#38bdf8' }}>⚡ Core Java & JVM (Java 21)</h4>
+              <ul style={{ margin: 0, paddingLeft: '18px', color: '#94a3b8' }}>
+                <li>Java 21 Virtual Threads (Project Loom)</li>
+                <li>HashMap internal buckets & Red-Black trees</li>
+                <li>ConcurrentHashMap CAS & Bucket Locks</li>
+                <li>equals() / hashCode() contract</li>
+                <li>JVM Heap vs Stack & Metaspace</li>
+                <li>G1 GC, ZGC & Garbage Collection</li>
+                <li>ThreadLocal & Memory Leak safety</li>
+              </ul>
+            </div>
+
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', borderLeft: '3px solid #a855f7' }}>
+              <h4 style={{ margin: '0 0 8px 0', color: '#a855f7' }}>🛡️ Spring Security & Auth</h4>
+              <ul style={{ margin: 0, paddingLeft: '18px', color: '#94a3b8' }}>
+                <li>Spring Security Filter Chain & Proxies</li>
+                <li>Stateless JWT Authentication & Claims</li>
+                <li>Refresh Token rotation mechanism</li>
+                <li>BCrypt Password Hashing</li>
+                <li>Role-Based Authorization (@PreAuthorize)</li>
+                <li>CORS & CSRF Security Policies</li>
+                <li>Custom UserDetailsService & Handlers</li>
+              </ul>
+            </div>
+
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', borderLeft: '3px solid #10b981' }}>
+              <h4 style={{ margin: '0 0 8px 0', color: '#10b981' }}>🌱 Spring Data JPA & DB</h4>
+              <ul style={{ margin: 0, paddingLeft: '18px', color: '#94a3b8' }}>
+                <li>Spring Data JPA Repositories (No Hibernate API)</li>
+                <li>Derived Query Methods & JPQL</li>
+                <li>@Transactional Propagation & Rollbacks</li>
+                <li>N+1 Query resolution with Fetch Joins</li>
+                <li>Optimistic & Pessimistic DB Locking</li>
+                <li>HikariCP DB Connection Pooling</li>
+              </ul>
+            </div>
+
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', borderLeft: '3px solid #f59e0b' }}>
+              <h4 style={{ margin: '0 0 8px 0', color: '#f59e0b' }}>🌐 Microservices & Resilience</h4>
+              <ul style={{ margin: 0, paddingLeft: '18px', color: '#94a3b8' }}>
+                <li>Spring Cloud Gateway (WebFlux Engine)</li>
+                <li>Resilience4j Circuit Breakers & Fallbacks</li>
+                <li>OpenTelemetry Distributed Tracing</li>
+                <li>Spring AI + Google Gemini 1.5 Flash</li>
+                <li>Idempotency Keys & Rate Limiting</li>
+                <li>Reactive WebClient Downstream calls</li>
+              </ul>
+            </div>
+
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', borderLeft: '3px solid #ec4899' }}>
+              <h4 style={{ margin: '0 0 8px 0', color: '#ec4899' }}>☁️ Docker, GCP & CI/CD</h4>
+              <ul style={{ margin: 0, paddingLeft: '18px', color: '#94a3b8' }}>
+                <li>Multi-Stage Alpine Dockerfiles</li>
+                <li>Google Artifact Registry Container Push</li>
+                <li>GCP Cloud Run Serverless Containers</li>
+                <li>GitHub Actions Automated CI/CD</li>
+                <li>OWASP Top 10 Security Defenses</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+      </div>
 
       {/* Dynamic Alerts */}
       {alert && (
