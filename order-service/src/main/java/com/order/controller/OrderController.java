@@ -1,10 +1,16 @@
 package com.order.controller;
 
+import com.order.entity.OrderItem;
+import com.order.repository.OrderRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -12,17 +18,30 @@ import java.util.Map;
 @RequestMapping("/api/orders")
 public class OrderController {
 
+    @Autowired
+    private OrderRepository orderRepository;
+
     @GetMapping
     public Map<String, Object> getOrders() {
+        List<OrderItem> orders = orderRepository.findAll();
+        if (orders.isEmpty()) {
+            // Seed initial records if empty
+            orderRepository.save(new OrderItem(null, "Enterprise Laptop", new BigDecimal("1200.00")));
+            orderRepository.save(new OrderItem(null, "Wireless Mouse", new BigDecimal("25.50")));
+            orders = orderRepository.findAll();
+        }
         return Map.of(
             "service", "order-service",
+            "database", "Spring Data JPA MySQL / Cloud SQL",
             "virtualThread", Thread.currentThread().isVirtual(),
             "threadName", Thread.currentThread().toString(),
-            "orders", List.of(
-                Map.of("id", 101, "item", "Laptop", "amount", 1200.00),
-                Map.of("id", 102, "item", "Wireless Mouse", "amount", 25.50)
-            )
+            "orders", orders
         );
+    }
+
+    @PostMapping
+    public OrderItem createOrder(@RequestBody OrderItem item) {
+        return orderRepository.save(item);
     }
 
     @GetMapping("/ai-recommendation")
