@@ -61,7 +61,8 @@ jobs:
             --region $GCP_REGION \
             --platform managed \
             --allow-unauthenticated \
-            --port 8080
+            --port 8080 \
+            --memory 512Mi
 
       # 2. Build & Deploy Order Service
       - name: Build & Push Order Service Image
@@ -76,7 +77,6 @@ jobs:
             --region $GCP_REGION \
             --platform managed \
             --allow-unauthenticated \
-            --set-env-vars "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},SERVER_PORT=8080" \
+            --set-env-vars "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" \
             --port 8080 \
-            --memory 1Gi \
-            --timeout 300
+            --memory 512Mi

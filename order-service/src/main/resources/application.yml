@@ -1,5 +1,5 @@
 server:
-  port: ${PORT:${SERVER_PORT:8082}}
+  port: ${PORT:8080}
 
 spring:
   application:
@@ -10,5 +10,6 @@ spring:
   ai:
     vertexai:
       gemini:
-        api-key: ${GEMINI_API_KEY:}
+        transport: rest
+        api-key: ${GEMINI_API_KEY:dummy_key}
         model: gemini-1.5-flash

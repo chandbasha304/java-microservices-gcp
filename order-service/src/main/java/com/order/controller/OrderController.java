@@ -17,11 +17,15 @@ public class OrderController {
     private final ChatClient chatClient;
 
     public OrderController(@Autowired(required = false) ChatClient.Builder chatClientBuilder) {
+        ChatClient client = null;
         if (chatClientBuilder != null) {
-            this.chatClient = chatClientBuilder.build();
-        } else {
-            this.chatClient = null;
+            try {
+                client = chatClientBuilder.build();
+            } catch (Exception e) {
+                client = null;
+            }
         }
+        this.chatClient = client;
     }
 
     @GetMapping
@@ -42,15 +46,22 @@ public class OrderController {
         if (chatClient == null) {
             return Map.of(
                 "status", "Spring AI Disabled",
-                "message", "GEMINI_API_KEY environment variable not set."
+                "message", "GEMINI_API_KEY environment variable not set or invalid."
             );
         }
-        String aiResponse = chatClient.prompt().user(prompt).call().content();
-        return Map.of(
-            "prompt", prompt,
-            "aiResponse", aiResponse,
-            "model", "Google Gemini 1.5 Flash",
-            "virtualThread", Thread.currentThread().isVirtual()
-        );
+        try {
+            String aiResponse = chatClient.prompt().user(prompt).call().content();
+            return Map.of(
+                "prompt", prompt,
+                "aiResponse", aiResponse,
+                "model", "Google Gemini 1.5 Flash",
+                "virtualThread", Thread.currentThread().isVirtual()
+            );
+        } catch (Exception ex) {
+            return Map.of(
+                "status", "Spring AI Error",
+                "message", ex.getMessage()
+            );
+        }
     }
 }
