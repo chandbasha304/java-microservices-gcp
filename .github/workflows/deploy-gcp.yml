@@ -65,7 +65,7 @@ jobs:
             --port 8080 \
             --memory 512Mi
 
-      # 2. Build & Deploy Auth Service connected to Cloud SQL
+      # 2. Build & Deploy Auth Service
       - name: Build & Push Auth Service Image
         run: |
           docker build -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-service:${{ github.sha }} ./auth-service
@@ -78,12 +78,10 @@ jobs:
             --region $GCP_REGION \
             --platform managed \
             --allow-unauthenticated \
-            --add-cloudsql-instances=$CLOUD_SQL_INSTANCE \
-            --set-env-vars "DB_URL=jdbc:mysql:///auth_db?socketFactory=com.google.cloud.sql.mysql.SocketFactory&cloudSqlInstance=$CLOUD_SQL_INSTANCE,DB_USER=root,DB_PASS=rootpassword123,DB_DRIVER=com.mysql.cj.jdbc.Driver,DB_DIALECT=org.hibernate.dialect.MySQLDialect" \
             --port 8080 \
             --memory 512Mi
 
-      # 3. Build & Deploy Order Service connected to Cloud SQL
+      # 3. Build & Deploy Order Service
       - name: Build & Push Order Service Image
         run: |
           docker build -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/order-service:${{ github.sha }} ./order-service
@@ -96,8 +94,6 @@ jobs:
             --region $GCP_REGION \
             --platform managed \
             --allow-unauthenticated \
-            --add-cloudsql-instances=$CLOUD_SQL_INSTANCE \
-            --set-env-vars "DB_URL=jdbc:mysql:///order_db?socketFactory=com.google.cloud.sql.mysql.SocketFactory&cloudSqlInstance=$CLOUD_SQL_INSTANCE,DB_USER=root,DB_PASS=rootpassword123,DB_DRIVER=com.mysql.cj.jdbc.Driver,DB_DIALECT=org.hibernate.dialect.MySQLDialect" \
             --port 8080 \
             --memory 512Mi
 
