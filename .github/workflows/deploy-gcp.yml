@@ -1,4 +1,4 @@
-name: Build and Deploy Microservices to GCP Cloud Run
+name: Build and Deploy Microservices & React Frontend to GCP Cloud Run
 
 on:
   push:
@@ -80,3 +80,19 @@ jobs:
             --set-env-vars "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" \
             --port 8080 \
             --memory 512Mi
+
+      # 3. Build & Deploy React Frontend Client
+      - name: Build & Push React Client Image
+        run: |
+          docker build -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-client:${{ github.sha }} ./auth-client
+          docker push us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-client:${{ github.sha }}
+
+      - name: Deploy React Client to GCP Cloud Run
+        run: |
+          gcloud run deploy auth-client \
+            --image us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-client:${{ github.sha }} \
+            --region $GCP_REGION \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 8080 \
+            --memory 256Mi
