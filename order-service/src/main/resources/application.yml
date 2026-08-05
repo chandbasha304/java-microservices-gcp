@@ -7,9 +7,3 @@ spring:
   threads:
     virtual:
       enabled: true
-  ai:
-    vertexai:
-      gemini:
-        transport: rest
-        api-key: ${GEMINI_API_KEY:dummy_key}
-        model: gemini-1.5-flash
