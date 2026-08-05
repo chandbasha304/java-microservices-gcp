@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -27,7 +28,7 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      # Keyless Authentication via Workload Identity Federation or Service Account Key
+      # Keyless Authentication via Workload Identity Federation
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -36,6 +37,13 @@ jobs:
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+
+      - name: Create Artifact Registry Repo if not exists
+        run: |
+          gcloud artifacts repositories create $ARTIFACT_REGISTRY_REPO \
+            --repository-format=docker \
+            --location=$GCP_REGION \
+            --description="Docker repository for microservices" || true
 
       - name: Configure Docker for GCP Artifact Registry
         run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
@@ -68,4 +76,5 @@ jobs:
             --region $GCP_REGION \
             --platform managed \
             --allow-unauthenticated \
+            --set-env-vars "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" \
             --port 8082
