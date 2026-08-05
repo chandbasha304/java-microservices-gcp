@@ -45,7 +45,7 @@ public class OrderController {
                 "message", "GEMINI_API_KEY environment variable not set."
             );
         }
-        String aiResponse = chatClient.prompt(prompt).call().content();
+        String aiResponse = chatClient.prompt().user(prompt).call().content();
         return Map.of(
             "prompt", prompt,
             "aiResponse", aiResponse,
