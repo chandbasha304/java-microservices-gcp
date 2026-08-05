@@ -76,7 +76,7 @@ jobs:
             --region $GCP_REGION \
             --platform managed \
             --allow-unauthenticated \
-            --set-env-vars "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" \
-            --port 8082 \
+            --set-env-vars "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},SERVER_PORT=8080" \
+            --port 8080 \
             --memory 1Gi \
             --timeout 300
