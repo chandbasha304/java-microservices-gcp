@@ -1,0 +1,190 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: microservices
+---
+# 1. Auth Service Deployment & Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: microservices
+  labels:
+    app: auth-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: us-central1-docker.pkg.dev/prefab-lamp-498812-u8/microservices-repo/auth-service:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: DB_URL
+              value: "jdbc:h2:mem:auth_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: microservices
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: auth-service
+---
+# 2. Order Service Deployment & Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: microservices
+  labels:
+    app: order-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: us-central1-docker.pkg.dev/prefab-lamp-498812-u8/microservices-repo/order-service:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: DB_URL
+              value: "jdbc:h2:mem:order_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: microservices
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: order-service
+---
+# 3. API Gateway Deployment & Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: microservices
+  labels:
+    app: api-gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: us-central1-docker.pkg.dev/prefab-lamp-498812-u8/microservices-repo/api-gateway:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: microservices
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: api-gateway
+---
+# 4. Auth Client React Frontend Deployment & Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-client
+  namespace: microservices
+  labels:
+    app: auth-client
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: auth-client
+  template:
+    metadata:
+      labels:
+        app: auth-client
+    spec:
+      containers:
+        - name: auth-client
+          image: us-central1-docker.pkg.dev/prefab-lamp-498812-u8/microservices-repo/auth-client:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-client
+  namespace: microservices
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    app: auth-client

@@ -1,4 +1,4 @@
-name: Build and Deploy Microservices & React Frontend to GCP Cloud Run
+name: CI - Build & Push Docker Images to GCP Artifact Registry for ArgoCD GitOps
 
 on:
   push:
@@ -10,10 +10,9 @@ env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCP_REGION: us-central1
   ARTIFACT_REGISTRY_REPO: microservices-repo
-  CLOUD_SQL_INSTANCE: prefab-lamp-498812-u8:us-central1:auth-mysql-db
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
@@ -49,64 +48,26 @@ jobs:
       - name: Configure Docker for GCP Artifact Registry
         run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
-      # 1. Build & Deploy API Gateway
-      - name: Build & Push API Gateway Image
+      # 1. Build & Push API Gateway Image
+      - name: Build & Push API Gateway
         run: |
-          docker build -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/api-gateway:${{ github.sha }} ./api-gateway
-          docker push us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/api-gateway:${{ github.sha }}
+          docker build -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/api-gateway:latest ./api-gateway
+          docker push us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/api-gateway:latest
 
-      - name: Deploy API Gateway to GCP Cloud Run
+      # 2. Build & Push Auth Service Image
+      - name: Build & Push Auth Service
         run: |
-          gcloud run deploy api-gateway \
-            --image us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/api-gateway:${{ github.sha }} \
-            --region $GCP_REGION \
-            --platform managed \
-            --allow-unauthenticated \
-            --port 8080 \
-            --memory 512Mi
+          docker build -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-service:latest ./auth-service
+          docker push us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-service:latest
 
-      # 2. Build & Deploy Auth Service
-      - name: Build & Push Auth Service Image
+      # 3. Build & Push Order Service Image
+      - name: Build & Push Order Service
         run: |
-          docker build -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-service:${{ github.sha }} ./auth-service
-          docker push us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-service:${{ github.sha }}
+          docker build -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/order-service:latest ./order-service
+          docker push us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/order-service:latest
 
-      - name: Deploy Auth Service to GCP Cloud Run
+      # 4. Build & Push React Frontend Client Image
+      - name: Build & Push React Client
         run: |
-          gcloud run deploy auth-service \
-            --image us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-service:${{ github.sha }} \
-            --region $GCP_REGION \
-            --platform managed \
-            --allow-unauthenticated \
-            --port 8080 \
-            --memory 512Mi
-
-      # 3. Build & Deploy Order Service
-      - name: Build & Push Order Service Image
-        run: |
-          docker build -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/order-service:${{ github.sha }} ./order-service
-          docker push us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/order-service:${{ github.sha }}
-
-      - name: Deploy Order Service to GCP Cloud Run
-        run: |
-          gcloud run deploy order-service \
-            --image us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/order-service:${{ github.sha }} \
-            --region $GCP_REGION \
-            --platform managed \
-            --allow-unauthenticated \
-            --port 8080 \
-            --memory 512Mi
-
-      # 4. Fetch API Gateway URL & Deploy React Frontend Client
-      - name: Deploy React Client to GCP Cloud Run
-        run: |
-          GATEWAY_URL=$(gcloud run services describe api-gateway --region $GCP_REGION --format 'value(status.url)')
-          docker build --build-arg VITE_API_BASE=$GATEWAY_URL -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-client:${{ github.sha }} ./auth-client
-          docker push us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-client:${{ github.sha }}
-          gcloud run deploy auth-client \
-            --image us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-client:${{ github.sha }} \
-            --region $GCP_REGION \
-            --platform managed \
-            --allow-unauthenticated \
-            --port 8080 \
-            --memory 256Mi
+          docker build -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-client:latest ./auth-client
+          docker push us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-client:latest
