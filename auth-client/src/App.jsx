@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
-// Base API URL pointing to the Spring Boot backend
-const API_BASE = 'http://localhost:8081';
+// Base API URL pointing dynamically to API Gateway reverse proxy or local environment
+const API_BASE = import.meta.env.VITE_API_BASE || (window.location.hostname === 'localhost' ? 'http://localhost:8080' : '');
+
 
 // Helper to decode JWT payload locally without external libraries
 function parseJwt(token) {

@@ -64,7 +64,23 @@ jobs:
             --port 8080 \
             --memory 512Mi
 
-      # 2. Build & Deploy Order Service
+      # 2. Build & Deploy Auth Service
+      - name: Build & Push Auth Service Image
+        run: |
+          docker build -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-service:${{ github.sha }} ./auth-service
+          docker push us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-service:${{ github.sha }}
+
+      - name: Deploy Auth Service to GCP Cloud Run
+        run: |
+          gcloud run deploy auth-service \
+            --image us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-service:${{ github.sha }} \
+            --region $GCP_REGION \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 8080 \
+            --memory 512Mi
+
+      # 3. Build & Deploy Order Service
       - name: Build & Push Order Service Image
         run: |
           docker build -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/order-service:${{ github.sha }} ./order-service
@@ -77,18 +93,15 @@ jobs:
             --region $GCP_REGION \
             --platform managed \
             --allow-unauthenticated \
-            --set-env-vars "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" \
             --port 8080 \
             --memory 512Mi
 
-      # 3. Build & Deploy React Frontend Client
-      - name: Build & Push React Client Image
-        run: |
-          docker build -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-client:${{ github.sha }} ./auth-client
-          docker push us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-client:${{ github.sha }}
-
+      # 4. Fetch API Gateway URL & Deploy React Frontend Client
       - name: Deploy React Client to GCP Cloud Run
         run: |
+          GATEWAY_URL=$(gcloud run services describe api-gateway --region $GCP_REGION --format 'value(status.url)')
+          docker build --build-arg VITE_API_BASE=$GATEWAY_URL -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-client:${{ github.sha }} ./auth-client
+          docker push us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-client:${{ github.sha }}
           gcloud run deploy auth-client \
             --image us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY_REPO/auth-client:${{ github.sha }} \
             --region $GCP_REGION \
