@@ -21,21 +21,21 @@ public class DataInitializer implements CommandLineRunner {
         if (userRepository.findByUsername("admin").isEmpty()) {
             User admin = new User();
             admin.setUsername("admin");
-            admin.setEmail("admin@enterprise.com");
+            admin.setEmail("admin@example.com");
             admin.setPassword(passwordEncoder.encode("Admin123"));
-            admin.setRole(Role.ADMIN);
+            admin.setRole(Role.ROLE_ADMIN);
             userRepository.save(admin);
             System.out.println(">>> DataInitializer: Seeded admin user (username: admin, password: Admin123)");
         }
 
         // Seed default Regular user
         if (userRepository.findByUsername("user").isEmpty()) {
-            User user = new User();
-            user.setUsername("user");
-            user.setEmail("user@enterprise.com");
-            user.setPassword(passwordEncoder.encode("User123"));
-            user.setRole(Role.USER);
-            userRepository.save(user);
+            User regularUser = new User();
+            regularUser.setUsername("user");
+            regularUser.setEmail("user@example.com");
+            regularUser.setPassword(passwordEncoder.encode("User123"));
+            regularUser.setRole(Role.ROLE_USER);
+            userRepository.save(regularUser);
             System.out.println(">>> DataInitializer: Seeded regular user (username: user, password: User123)");
         }
     }
