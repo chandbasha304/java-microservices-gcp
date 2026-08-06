@@ -17,3 +17,13 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
