@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   name: microservices
 ---
-# 1. Auth Service Deployment & Service
+# 1. Auth Service Deployment & HPA
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,7 +12,7 @@ metadata:
   labels:
     app: auth-service
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: auth-service
@@ -33,11 +33,11 @@ spec:
               value: "jdbc:h2:mem:auth_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "250m"
+              memory: "180Mi"
+              cpu: "100m"
             limits:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "350Mi"
+              cpu: "300m"
 ---
 apiVersion: v1
 kind: Service
@@ -52,7 +52,27 @@ spec:
   selector:
     app: auth-service
 ---
-# 2. Order Service Deployment & Service
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: auth-service-hpa
+  namespace: microservices
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: auth-service
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+# 2. Order Service Deployment & HPA
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -61,7 +81,7 @@ metadata:
   labels:
     app: order-service
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: order-service
@@ -82,11 +102,11 @@ spec:
               value: "jdbc:h2:mem:order_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "250m"
+              memory: "180Mi"
+              cpu: "100m"
             limits:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "350Mi"
+              cpu: "300m"
 ---
 apiVersion: v1
 kind: Service
@@ -101,7 +121,27 @@ spec:
   selector:
     app: order-service
 ---
-# 3. Notification Service Deployment & Service
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: order-service-hpa
+  namespace: microservices
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: order-service
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+# 3. Notification Service Deployment & HPA
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -110,7 +150,7 @@ metadata:
   labels:
     app: notification-service
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: notification-service
@@ -129,11 +169,11 @@ spec:
               value: "8080"
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "250m"
+              memory: "180Mi"
+              cpu: "100m"
             limits:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "350Mi"
+              cpu: "300m"
 ---
 apiVersion: v1
 kind: Service
@@ -148,7 +188,27 @@ spec:
   selector:
     app: notification-service
 ---
-# 4. API Gateway Deployment & Service
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: notification-service-hpa
+  namespace: microservices
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification-service
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+# 4. API Gateway Deployment (Reverse Proxy) & Service
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -157,7 +217,7 @@ metadata:
   labels:
     app: api-gateway
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: api-gateway
@@ -173,11 +233,11 @@ spec:
             - containerPort: 8080
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "250m"
+              memory: "180Mi"
+              cpu: "100m"
             limits:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "350Mi"
+              cpu: "300m"
 ---
 apiVersion: v1
 kind: Service
@@ -201,7 +261,7 @@ metadata:
   labels:
     app: auth-client
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: auth-client
@@ -217,11 +277,11 @@ spec:
             - containerPort: 8080
           resources:
             requests:
-              memory: "128Mi"
-              cpu: "100m"
+              memory: "100Mi"
+              cpu: "50m"
             limits:
-              memory: "256Mi"
-              cpu: "250m"
+              memory: "200Mi"
+              cpu: "150m"
 ---
 apiVersion: v1
 kind: Service
