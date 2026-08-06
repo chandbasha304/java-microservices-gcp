@@ -20,6 +20,20 @@ services:
       - notification-service
     restart: always
 
+  # PostgreSQL Database Container (Database-per-Service Isolation)
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
   # 2. Auth Service
   auth-service:
     build:
@@ -30,7 +44,13 @@ services:
       - "8081:8081"
     environment:
       - PORT=8081
-      - DB_URL=jdbc:h2:mem:auth_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+      - DB_URL=jdbc:postgresql://postgres-db:5432/auth_db
+      - DB_DRIVER=org.postgresql.Driver
+      - DB_USER=postgres
+      - DB_PASS=postgrespassword
+      - DB_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+    depends_on:
+      - postgres-db
     restart: always
 
   # 3. Order Service
@@ -43,9 +63,14 @@ services:
       - "8082:8082"
     environment:
       - PORT=8082
-      - DB_URL=jdbc:h2:mem:order_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+      - DB_URL=jdbc:postgresql://postgres-db:5432/order_db
+      - DB_DRIVER=org.postgresql.Driver
+      - DB_USER=postgres
+      - DB_PASS=postgrespassword
+      - DB_DIALECT=org.hibernate.dialect.PostgreSQLDialect
       - NOTIFICATION_SERVICE_URL=http://notification-service:8083
     depends_on:
+      - postgres-db
       - notification-service
     restart: always
 
@@ -92,4 +117,8 @@ services:
     ports:
       - "9411:9411"
     restart: always
+
+volumes:
+  postgres_data:
+
 
