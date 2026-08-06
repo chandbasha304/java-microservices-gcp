@@ -23,7 +23,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setUsername("admin");
             admin.setEmail("admin@example.com");
             admin.setPassword(passwordEncoder.encode("Admin123"));
-            admin.setRole(Role.ROLE_ADMIN);
+            admin.setRole(Role.ADMIN);
             userRepository.save(admin);
             System.out.println(">>> DataInitializer: Seeded admin user (username: admin, password: Admin123)");
         }
@@ -34,7 +34,7 @@ public class DataInitializer implements CommandLineRunner {
             regularUser.setUsername("user");
             regularUser.setEmail("user@example.com");
             regularUser.setPassword(passwordEncoder.encode("User123"));
-            regularUser.setRole(Role.ROLE_USER);
+            regularUser.setRole(Role.USER);
             userRepository.save(regularUser);
             System.out.println(">>> DataInitializer: Seeded regular user (username: user, password: User123)");
         }
