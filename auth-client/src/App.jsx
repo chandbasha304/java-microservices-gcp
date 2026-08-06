@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 
 // Base API URL pointing dynamically to API Gateway reverse proxy or local environment
@@ -23,23 +23,22 @@ function parseJwt(token) {
 
 export default function App() {
   // Authentication state
-  const [auth, setAuth] = useState(null); // { accessToken, refreshToken, user: { username, email, role } }
+  const [auth, setAuth] = useState(null);
   const [activeTab, setActiveTab] = useState('login'); // 'login' | 'register'
-  const [navSection, setNavSection] = useState('topology'); // 'topology' | 'java' | 'security' | 'devops' | 'database' | 'observability'
+  
+  // Navigation sections visible ONLY AFTER LOGIN SUCCESS
+  const [activeSection, setActiveSection] = useState('overview'); // 'overview' | 'core_java' | 'adv_java' | 'security' | 'gateway' | 'devops' | 'rdbms' | 'nosql' | 'telemetry'
 
   // Form states
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ username: '', email: '', password: '', role: 'USER' });
 
-  // UI states
+  // UI & Live Telemetry states
   const [alert, setAlert] = useState(null);
-  const [testResult, setTestResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [dbUsers, setDbUsers] = useState([]);
-
-  // Telemetry metrics
   const [vThreadsCount, setVThreadsCount] = useState(1024);
   const [jvmHeapUsed, setJvmHeapUsed] = useState(248);
+  const [circuitBreakerStatus, setCircuitBreakerStatus] = useState('CLOSED (HEALTHY)');
 
   const showAlert = (type, message) => {
     setAlert({ type, message });
@@ -57,10 +56,10 @@ export default function App() {
       }
     }
 
-    // Animate telemetry data
+    // Dynamic metrics interval
     const interval = setInterval(() => {
       setVThreadsCount(prev => prev + Math.floor(Math.random() * 20) - 10);
-      setJvmHeapUsed(prev => Math.min(450, Math.max(180, prev + Math.floor(Math.random() * 8) - 4)));
+      setJvmHeapUsed(prev => Math.min(480, Math.max(190, prev + Math.floor(Math.random() * 6) - 3)));
     }, 3000);
 
     return () => clearInterval(interval);
@@ -69,7 +68,6 @@ export default function App() {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTestResult(null);
     try {
       const response = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
@@ -87,12 +85,13 @@ export default function App() {
         };
         localStorage.setItem('auth_session', JSON.stringify(session));
         setAuth(session);
-        showAlert('success', `Authentication successful! Welcome back ${loginForm.username}.`);
+        setActiveSection('overview'); // Default section after login
+        showAlert('success', `Login successful! Welcome ${loginForm.username}. Navigation menu unlocked.`);
       } else {
         showAlert('error', 'Login failed. Invalid username or password.');
       }
     } catch (err) {
-      showAlert('error', 'Network error. Verify API Gateway is online.');
+      showAlert('error', 'Cannot connect to backend API Gateway.');
     } finally {
       setLoading(false);
     }
@@ -109,30 +108,15 @@ export default function App() {
       });
 
       if (response.ok) {
-        showAlert('success', 'User registered in PostgreSQL database! Please login.');
+        showAlert('success', 'User registered successfully in PostgreSQL! Please sign in.');
         setActiveTab('login');
       } else {
-        showAlert('error', 'Registration failed. User may already exist.');
+        showAlert('error', 'Registration failed.');
       }
     } catch (err) {
       showAlert('error', 'Cannot connect to server.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchUsersFromDb = async () => {
-    if (!auth) return;
-    try {
-      const response = await fetch(`${API_BASE}/auth/users`, {
-        headers: { 'Authorization': `Bearer ${auth.accessToken}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setDbUsers(data);
-      }
-    } catch (e) {
-      // Fallback display
     }
   };
 
@@ -144,51 +128,26 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* Glassmorphism Header */}
+      {/* Top Navbar */}
       <header className="navbar">
         <div className="logo-group">
           <span className="logo-badge">GCP CLOUD</span>
-          <span className="logo-text">Enterprise Microservices Dashboard</span>
+          <span className="logo-text">Enterprise Architecture Platform</span>
         </div>
 
         {auth && (
-          <div className="nav-tabs">
-            <button className={`nav-tab-btn ${navSection === 'topology' ? 'active' : ''}`} onClick={() => setNavSection('topology')}>
-              🌐 Topology
-            </button>
-            <button className={`nav-tab-btn ${navSection === 'java' ? 'active' : ''}`} onClick={() => setNavSection('java')}>
-              ☕ Core & Adv Java
-            </button>
-            <button className={`nav-tab-btn ${navSection === 'security' ? 'active' : ''}`} onClick={() => setNavSection('security')}>
-              🔐 Security & JWT
-            </button>
-            <button className={`nav-tab-btn ${navSection === 'devops' ? 'active' : ''}`} onClick={() => setNavSection('devops')}>
-              🐳 DevOps & GCP
-            </button>
-            <button className={`nav-tab-btn ${navSection === 'database' ? 'active' : ''}`} onClick={() => setNavSection('database')}>
-              🗄️ PostgreSQL
-            </button>
-            <button className={`nav-tab-btn ${navSection === 'observability' ? 'active' : ''}`} onClick={() => setNavSection('observability')}>
-              📊 Telemetry
-            </button>
-          </div>
-        )}
-
-        {auth && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div className="user-badge">
-              <div className="user-avatar">{auth.user.username[0].toUpperCase()}</div>
-              <div>
-                <div className="user-info-text">{auth.user.username}</div>
-                <span className="user-role-chip">{auth.user.role}</span>
-              </div>
+          <div className="user-badge">
+            <div className="user-avatar">{auth.user.username[0].toUpperCase()}</div>
+            <div>
+              <div className="user-info-text">{auth.user.username}</div>
+              <span className="user-role-chip">{auth.user.role}</span>
             </div>
-            <button className="logout-btn" onClick={logout}>Logout</button>
+            <button className="logout-btn" style={{ marginLeft: '12px' }} onClick={logout}>Logout</button>
           </div>
         )}
       </header>
 
-      {/* Alert Notification */}
+      {/* Alert Banner */}
       {alert && (
         <div className={`alert-banner ${alert.type}`}>
           <span>{alert.message}</span>
@@ -196,192 +155,221 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Workspace */}
-      <main className="main-content">
-        {!auth ? (
-          <div className="auth-box-container">
-            <div className="auth-header">
-              <h2>Cloud Access Portal</h2>
-              <p>Spring Security JWT & PostgreSQL Microservices Stack</p>
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
-              <button 
-                className={`btn-${activeTab === 'login' ? 'primary' : 'outline'}`} 
-                style={{ flex: 1 }}
-                onClick={() => setActiveTab('login')}
-              >
-                Sign In
-              </button>
-              <button 
-                className={`btn-${activeTab === 'register' ? 'primary' : 'outline'}`} 
-                style={{ flex: 1 }}
-                onClick={() => setActiveTab('register')}
-              >
-                Register
-              </button>
-            </div>
-
-            {activeTab === 'login' ? (
-              <form onSubmit={handleLoginSubmit}>
-                <div className="form-group">
-                  <label>Username</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    placeholder="e.g. admin" 
-                    value={loginForm.username}
-                    onChange={e => setLoginForm({...loginForm, username: e.target.value})}
-                    required 
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Password</label>
-                  <input 
-                    type="password" 
-                    className="form-input" 
-                    placeholder="••••••••" 
-                    value={loginForm.password}
-                    onChange={e => setLoginForm({...loginForm, password: e.target.value})}
-                    required 
-                  />
-                </div>
-                <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '10px' }} disabled={loading}>
-                  {loading ? 'Authenticating...' : 'Authenticate'}
-                </button>
-                <div style={{ marginTop: '16px', fontSize: '0.8rem', color: 'var(--text-dim)', textAlign: 'center' }}>
-                  Default Credentials: <code>admin</code> / <code>Admin123</code>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleRegisterSubmit}>
-                <div className="form-group">
-                  <label>Username</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    placeholder="Enter username" 
-                    value={registerForm.username}
-                    onChange={e => setRegisterForm({...registerForm, username: e.target.value})}
-                    required 
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Email Address</label>
-                  <input 
-                    type="email" 
-                    className="form-input" 
-                    placeholder="user@enterprise.com" 
-                    value={registerForm.email}
-                    onChange={e => setRegisterForm({...registerForm, email: e.target.value})}
-                    required 
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Password</label>
-                  <input 
-                    type="password" 
-                    className="form-input" 
-                    placeholder="Create password" 
-                    value={registerForm.password}
-                    onChange={e => setRegisterForm({...registerForm, password: e.target.value})}
-                    required 
-                  />
-                </div>
-                <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '10px' }} disabled={loading}>
-                  {loading ? 'Creating Account...' : 'Create Account'}
-                </button>
-              </form>
-            )}
+      {/* Main App Container */}
+      {!auth ? (
+        /* LOGIN / REGISTER PORTAL */
+        <div className="auth-box-container">
+          <div className="auth-header">
+            <h2>Cloud Access Portal</h2>
+            <p>Sign in to unlock full Technical Architecture Explorer</p>
           </div>
-        ) : (
-          <div>
-            {/* TOPOLOGY TAB */}
-            {navSection === 'topology' && (
+
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
+            <button 
+              className={`btn-${activeTab === 'login' ? 'primary' : 'outline'}`} 
+              style={{ flex: 1 }}
+              onClick={() => setActiveTab('login')}
+            >
+              Sign In
+            </button>
+            <button 
+              className={`btn-${activeTab === 'register' ? 'primary' : 'outline'}`} 
+              style={{ flex: 1 }}
+              onClick={() => setActiveTab('register')}
+            >
+              Register
+            </button>
+          </div>
+
+          {activeTab === 'login' ? (
+            <form onSubmit={handleLoginSubmit}>
+              <div className="form-group">
+                <label>Username</label>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="e.g. admin" 
+                  value={loginForm.username}
+                  onChange={e => setLoginForm({...loginForm, username: e.target.value})}
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label>Password</label>
+                <input 
+                  type="password" 
+                  className="form-input" 
+                  placeholder="••••••••" 
+                  value={loginForm.password}
+                  onChange={e => setLoginForm({...loginForm, password: e.target.value})}
+                  required 
+                />
+              </div>
+              <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '10px' }} disabled={loading}>
+                {loading ? 'Authenticating...' : 'Sign In & Access Portal'}
+              </button>
+              <div style={{ marginTop: '16px', fontSize: '0.8rem', color: 'var(--text-dim)', textAlign: 'center' }}>
+                Default Credentials: <code>admin</code> / <code>Admin123</code>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleRegisterSubmit}>
+              <div className="form-group">
+                <label>Username</label>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="Enter username" 
+                  value={registerForm.username}
+                  onChange={e => setRegisterForm({...registerForm, username: e.target.value})}
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label>Email Address</label>
+                <input 
+                  type="email" 
+                  className="form-input" 
+                  placeholder="user@enterprise.com" 
+                  value={registerForm.email}
+                  onChange={e => setRegisterForm({...registerForm, email: e.target.value})}
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label>Password</label>
+                <input 
+                  type="password" 
+                  className="form-input" 
+                  placeholder="Create password" 
+                  value={registerForm.password}
+                  onChange={e => setRegisterForm({...registerForm, password: e.target.value})}
+                  required 
+                />
+              </div>
+              <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '10px' }} disabled={loading}>
+                {loading ? 'Creating Account...' : 'Register User'}
+              </button>
+            </form>
+          )}
+        </div>
+      ) : (
+        /* POST-LOGIN DASHBOARD WITH TOP NAVBAR NAVIGATION MENU */
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+          {/* POST-LOGIN NAVIGATION MENU NAVBAR */}
+          <nav className="post-login-menu">
+            <button className={`menu-btn ${activeSection === 'overview' ? 'active' : ''}`} onClick={() => setActiveSection('overview')}>
+              🌐 Architecture & Topology
+            </button>
+            <button className={`menu-btn ${activeSection === 'core_java' ? 'active' : ''}`} onClick={() => setActiveSection('core_java')}>
+              ☕ Core Java 21 & Virtual Threads
+            </button>
+            <button className={`menu-btn ${activeSection === 'adv_java' ? 'active' : ''}`} onClick={() => setActiveSection('adv_java')}>
+              ⚙️ Advanced Java & Spring Boot
+            </button>
+            <button className={`menu-btn ${activeSection === 'security' ? 'active' : ''}`} onClick={() => setActiveSection('security')}>
+              🔐 Security & JWT Tokens
+            </button>
+            <button className={`menu-btn ${activeSection === 'gateway' ? 'active' : ''}`} onClick={() => setActiveSection('gateway')}>
+              🛡️ API Gateway & Circuit Breaker
+            </button>
+            <button className={`menu-btn ${activeSection === 'devops' ? 'active' : ''}`} onClick={() => setActiveSection('devops')}>
+              🐳 DevOps & GCP Compute Engine
+            </button>
+            <button className={`menu-btn ${activeSection === 'rdbms' ? 'active' : ''}`} onClick={() => setActiveSection('rdbms')}>
+              🗄️ PostgreSQL RDBMS Isolation
+            </button>
+            <button className={`menu-btn ${activeSection === 'nosql' ? 'active' : ''}`} onClick={() => setActiveSection('nosql')}>
+              ⚡ Redis & NoSQL Caching
+            </button>
+            <button className={`menu-btn ${activeSection === 'telemetry' ? 'active' : ''}`} onClick={() => setActiveSection('telemetry')}>
+              📊 Prometheus & Distributed Tracing
+            </button>
+          </nav>
+
+          <main className="main-content">
+            {/* 1. OVERVIEW & TOPOLOGY SECTION */}
+            {activeSection === 'overview' && (
               <div>
                 <div style={{ marginBottom: '24px' }}>
-                  <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Microservices System Architecture & Routing</h1>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Live traffic flow from Nginx Client Reverse Proxy through Spring Cloud API Gateway down to isolation domain databases.</p>
+                  <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>System Architecture & Traffic Topology</h1>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>End-to-End Live Routing Topology across Docker containers on GCP Compute Engine (`34.72.32.205`).</p>
                 </div>
 
                 <div className="grid-container">
                   <div className="glass-card">
                     <div className="card-header">
-                      <div className="card-title">🌐 API Gateway Router</div>
-                      <span className="card-badge badge-purple">Port 8080</span>
+                      <div className="card-title">🌐 Outer Reverse Proxy</div>
+                      <span className="card-badge badge-purple">Nginx / Port 80</span>
                     </div>
                     <div className="metric-row">
-                      <span className="metric-label">Gateway Framework</span>
-                      <span className="metric-value">Spring Cloud Gateway</span>
+                      <span className="metric-label">Role</span>
+                      <span className="metric-value">SPA Web Host & Proxy</span>
                     </div>
                     <div className="metric-row">
-                      <span className="metric-label">Circuit Breaker</span>
-                      <span className="metric-value" style={{ color: 'var(--accent-emerald)' }}>Resilience4j ACTIVE</span>
+                      <span className="metric-label">Route /auth/</span>
+                      <span className="metric-value">http://api-gateway:8080/auth/</span>
                     </div>
                     <div className="metric-row">
-                      <span className="metric-label">Route 1 (/auth/**)</span>
+                      <span className="metric-label">Route /api/</span>
+                      <span className="metric-value">http://api-gateway:8080/api/</span>
+                    </div>
+                  </div>
+
+                  <div className="glass-card">
+                    <div className="card-header">
+                      <div className="card-title">🛡️ Spring Cloud API Gateway</div>
+                      <span className="card-badge badge-cyan">Port 8080</span>
+                    </div>
+                    <div className="metric-row">
+                      <span className="metric-label">Resilience Filter</span>
+                      <span className="metric-value" style={{ color: 'var(--accent-emerald)' }}>Resilience4j Active</span>
+                    </div>
+                    <div className="metric-row">
+                      <span className="metric-label">Downstream 1</span>
                       <span className="metric-value">auth-service:8081</span>
                     </div>
                     <div className="metric-row">
-                      <span className="metric-label">Route 2 (/api/orders/**)</span>
+                      <span className="metric-label">Downstream 2</span>
                       <span className="metric-value">order-service:8082</span>
                     </div>
                   </div>
 
                   <div className="glass-card">
                     <div className="card-header">
-                      <div className="card-title">🔑 Auth Service</div>
-                      <span className="card-badge badge-cyan">Port 8081</span>
+                      <div className="card-title">🗄️ PostgreSQL 16 Cluster</div>
+                      <span className="card-badge badge-emerald">Port 5432</span>
                     </div>
                     <div className="metric-row">
-                      <span className="metric-label">Authentication</span>
-                      <span className="metric-value">Spring Security 6</span>
+                      <span className="metric-label">Auth Database</span>
+                      <span className="metric-value">auth_db (users, refresh_token)</span>
                     </div>
                     <div className="metric-row">
-                      <span className="metric-label">Token Signing</span>
-                      <span className="metric-value">HMAC-SHA256 (256-bit)</span>
+                      <span className="metric-label">Order Database</span>
+                      <span className="metric-value">order_db (orders)</span>
                     </div>
                     <div className="metric-row">
-                      <span className="metric-label">Database Target</span>
-                      <span className="metric-value">PostgreSQL (auth_db)</span>
-                    </div>
-                  </div>
-
-                  <div className="glass-card">
-                    <div className="card-header">
-                      <div className="card-title">📦 Order Service</div>
-                      <span className="card-badge badge-emerald">Port 8082</span>
-                    </div>
-                    <div className="metric-row">
-                      <span className="metric-label">Domain Logic</span>
-                      <span className="metric-value">Spring Data JPA</span>
-                    </div>
-                    <div className="metric-row">
-                      <span className="metric-label">Client Call</span>
-                      <span className="metric-value">WebClient Reactive</span>
-                    </div>
-                    <div className="metric-row">
-                      <span className="metric-label">Database Target</span>
-                      <span className="metric-value">PostgreSQL (order_db)</span>
+                      <span className="metric-label">Volume Persistence</span>
+                      <span className="metric-value">postgres_data (VM Disk)</span>
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* JAVA 21 & VIRTUAL THREADS TAB */}
-            {navSection === 'java' && (
+            {/* 2. CORE JAVA 21 & VIRTUAL THREADS SECTION */}
+            {activeSection === 'core_java' && (
               <div>
                 <div style={{ marginBottom: '24px' }}>
-                  <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Java 21 LTS & Project Loom Runtime</h1>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>High-throughput lightweight Virtual Threads enabled across Spring Boot 3 endpoints.</p>
+                  <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Core Java 21 & Project Loom Virtual Threads</h1>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>High-concurrency thread management without OS thread blocking overhead.</p>
                 </div>
 
                 <div className="grid-container">
                   <div className="glass-card">
                     <div className="card-header">
-                      <div className="card-title">⚡ Project Loom Telemetry</div>
-                      <span className="card-badge badge-emerald">Virtual Threads</span>
+                      <div className="card-title">⚡ Virtual Threads Telemetry</div>
+                      <span className="card-badge badge-emerald">Project Loom</span>
                     </div>
                     <div className="metric-row">
                       <span className="metric-label">Active Virtual Threads</span>
@@ -392,43 +380,87 @@ export default function App() {
                       <span className="metric-value">4 Threads (1 per vCPU)</span>
                     </div>
                     <div className="metric-row">
-                      <span className="metric-label">JVM Heap Used</span>
-                      <span className="metric-value">{jvmHeapUsed} MB / 512 MB</span>
+                      <span className="metric-label">Memory Footprint / Thread</span>
+                      <span className="metric-value">~1 KB (vs 1 MB platform thread)</span>
                     </div>
                   </div>
 
                   <div className="glass-card">
                     <div className="card-header">
-                      <div className="card-title">📄 Virtual Threads Configuration</div>
+                      <div className="card-title">📄 Spring Boot Virtual Thread Config</div>
                     </div>
                     <div className="code-block">
-{`# application.yml
+{`# Enabled across application.yml files:
 spring:
   threads:
     virtual:
       enabled: true
 
-# Enables Project Loom lightweight thread executor
-# for concurrent I/O requests without OS blocking.`}
+# Configures Tomcat to execute every incoming HTTP 
+# request on a Project Loom Virtual Thread.`}
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* SECURITY & JWT TAB */}
-            {navSection === 'security' && (
+            {/* 3. ADVANCED JAVA & SPRING BOOT SECTION */}
+            {activeSection === 'adv_java' && (
               <div>
                 <div style={{ marginBottom: '24px' }}>
-                  <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Spring Security 6 & JWT Token Inspector</h1>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Cryptographic token analysis and stateful refresh token persistence in PostgreSQL.</p>
+                  <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Advanced Java & Spring Boot 3 Framework</h1>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Reactive WebClient inter-service communication, JPA Repositories, and Exception Handling.</p>
+                </div>
+
+                <div className="grid-container">
+                  <div className="glass-card">
+                    <div className="card-header">
+                      <div className="card-title">📡 WebClient Inter-service Call</div>
+                      <span className="card-badge badge-cyan">Reactive I/O</span>
+                    </div>
+                    <div className="code-block">
+{`// order-service calling notification-service
+webClient.post()
+    .uri("http://notification-service:8083/api/notifications/send")
+    .bodyValue(notificationPayload)
+    .retrieve()
+    .bodyToMono(Void.class);`}
+                    </div>
+                  </div>
+
+                  <div className="glass-card">
+                    <div className="card-header">
+                      <div className="card-title">🛡️ Global Exception Handling</div>
+                      <span className="card-badge badge-purple">@RestControllerAdvice</span>
+                    </div>
+                    <div className="code-block">
+{`@RestControllerAdvice
+public class GlobalExceptionHandler {
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity handleBadCredentials() {
+        return ResponseEntity.status(401)
+            .body(Map.of("error", "Invalid Credentials"));
+    }
+}`}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 4. SECURITY & JWT TOKENS SECTION */}
+            {activeSection === 'security' && (
+              <div>
+                <div style={{ marginBottom: '24px' }}>
+                  <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Spring Security 6 & JWT Token Lifecycle</h1>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Cryptographic HMAC-SHA256 signature verification and Refresh Token database persistence.</p>
                 </div>
 
                 <div className="grid-container">
                   <div className="glass-card" style={{ gridColumn: 'span 2' }}>
                     <div className="card-header">
-                      <div className="card-title">🔐 Active Bearer Access Token</div>
-                      <span className="card-badge badge-purple">HMAC-SHA256</span>
+                      <div className="card-title">🔐 Active JWT Bearer Access Token</div>
+                      <span className="card-badge badge-purple">15 Min Expiry</span>
                     </div>
                     <div className="code-block" style={{ color: 'var(--accent-cyan)' }}>
                       {auth.accessToken}
@@ -437,7 +469,7 @@ spring:
 
                   <div className="glass-card">
                     <div className="card-header">
-                      <div className="card-title">🔄 DB Refresh Token</div>
+                      <div className="card-title">🔄 PostgreSQL Refresh Token</div>
                       <span className="card-badge badge-amber">7 Days Expiry</span>
                     </div>
                     <div className="code-block" style={{ color: 'var(--accent-amber)' }}>
@@ -448,15 +480,50 @@ spring:
               </div>
             )}
 
-            {/* DEVOPS & GCP TAB */}
-            {navSection === 'devops' && (
+            {/* 5. API GATEWAY & CIRCUIT BREAKER SECTION */}
+            {activeSection === 'gateway' && (
               <div>
                 <div style={{ marginBottom: '24px' }}>
-                  <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>DevOps, GCP Compute Engine & Docker Cluster</h1>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Container orchestrations deployed on Google Cloud Platform (`34.72.32.205`).</p>
+                  <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>API Gateway & Resilience4j Circuit Breaker</h1>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Prevents cascade service failure using sliding window metrics and automated fallbacks.</p>
                 </div>
 
-                <div className="glass-card" style={{ marginBottom: '24px' }}>
+                <div className="grid-container">
+                  <div className="glass-card">
+                    <div className="card-header">
+                      <div className="card-title">⚡ Circuit Breaker Status</div>
+                      <span className="card-badge badge-emerald">orderServiceCB</span>
+                    </div>
+                    <div className="metric-row">
+                      <span className="metric-label">Current State</span>
+                      <span className="metric-value" style={{ color: 'var(--accent-emerald)' }}>{circuitBreakerStatus}</span>
+                    </div>
+                    <div className="metric-row">
+                      <span className="metric-label">Failure Threshold</span>
+                      <span className="metric-value">50% Failure Rate</span>
+                    </div>
+                    <div className="metric-row">
+                      <span className="metric-label">Sliding Window Size</span>
+                      <span className="metric-value">10 Request Calls</span>
+                    </div>
+                    <div className="metric-row">
+                      <span className="metric-label">Fallback URI</span>
+                      <span className="metric-value">forward:/fallback/orders</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 6. DEVOPS & GCP COMPUTE ENGINE SECTION */}
+            {activeSection === 'devops' && (
+              <div>
+                <div style={{ marginBottom: '24px' }}>
+                  <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>DevOps, Docker & GCP Compute Engine</h1>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Container cluster running on GCP VM `microservices-vm` (`34.72.32.205`, 4 vCPU, 16GB RAM).</p>
+                </div>
+
+                <div className="glass-card">
                   <div className="card-header">
                     <div className="card-title">🐳 Docker Container Cluster Status</div>
                     <span className="card-badge badge-emerald">8 Containers Online</span>
@@ -470,7 +537,6 @@ spring:
                       </div>
                       <span className="pill-online"><span className="dot-green"></span> RUNNING</span>
                     </div>
-
                     <div className="status-item">
                       <div>
                         <div className="service-name">api-gateway (Spring Cloud Gateway)</div>
@@ -478,7 +544,6 @@ spring:
                       </div>
                       <span className="pill-online"><span className="dot-green"></span> RUNNING</span>
                     </div>
-
                     <div className="status-item">
                       <div>
                         <div className="service-name">postgres-db (PostgreSQL 16 Engine)</div>
@@ -486,23 +551,20 @@ spring:
                       </div>
                       <span className="pill-online"><span className="dot-green"></span> RUNNING</span>
                     </div>
-
                     <div className="status-item">
                       <div>
-                        <div className="service-name">auth-service (Authentication Microservice)</div>
+                        <div className="service-name">auth-service (Auth & JWT Token Service)</div>
                         <div className="service-port">Container Port: 8081 | Host Port: 8081</div>
                       </div>
                       <span className="pill-online"><span className="dot-green"></span> RUNNING</span>
                     </div>
-
                     <div className="status-item">
                       <div>
-                        <div className="service-name">order-service (Order Management Microservice)</div>
+                        <div className="service-name">order-service (Order Management Service)</div>
                         <div className="service-port">Container Port: 8082 | Host Port: 8082</div>
                       </div>
                       <span className="pill-online"><span className="dot-green"></span> RUNNING</span>
                     </div>
-
                     <div className="status-item">
                       <div>
                         <div className="service-name">notification-service (Email & Tracing Service)</div>
@@ -515,45 +577,45 @@ spring:
               </div>
             )}
 
-            {/* DATABASE & POSTGRESQL TAB */}
-            {navSection === 'database' && (
+            {/* 7. POSTGRESQL RDBMS ISOLATION SECTION */}
+            {activeSection === 'rdbms' && (
               <div>
                 <div style={{ marginBottom: '24px' }}>
-                  <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Database & Persistence (RDBMS PostgreSQL 16)</h1>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Isolated relational database contexts (`auth_db`, `order_db`) with HikariCP connection pooling.</p>
+                  <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>PostgreSQL RDBMS Isolation Architecture</h1>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Isolated relational databases (`auth_db`, `order_db`) with HikariCP connection pools.</p>
                 </div>
 
                 <div className="grid-container">
                   <div className="glass-card">
                     <div className="card-header">
                       <div className="card-title">🗄️ auth_db Schema</div>
-                      <span className="card-badge badge-cyan">PostgreSQL</span>
+                      <span className="card-badge badge-cyan">PostgreSQL 16</span>
                     </div>
                     <div className="metric-row">
-                      <span className="metric-label">Target Table 1</span>
-                      <span className="metric-value">users (id, username, email, password, role)</span>
+                      <span className="metric-label">Users Table</span>
+                      <span className="metric-value">id, username, email, password, role</span>
                     </div>
                     <div className="metric-row">
-                      <span className="metric-label">Target Table 2</span>
-                      <span className="metric-value">refresh_token (id, token, expiry_date, user_id)</span>
+                      <span className="metric-label">Refresh Token Table</span>
+                      <span className="metric-value">id, token, expiry_date, user_id</span>
                     </div>
                     <div className="metric-row">
                       <span className="metric-label">Connection Pool</span>
-                      <span className="metric-value" style={{ color: 'var(--accent-emerald)' }}>HikariPool-1 ACTIVE</span>
+                      <span className="metric-value" style={{ color: 'var(--accent-emerald)' }}>HikariPool Active</span>
                     </div>
                   </div>
 
                   <div className="glass-card">
                     <div className="card-header">
                       <div className="card-title">📦 order_db Schema</div>
-                      <span className="card-badge badge-emerald">PostgreSQL</span>
+                      <span className="card-badge badge-emerald">PostgreSQL 16</span>
                     </div>
                     <div className="metric-row">
-                      <span className="metric-label">Target Table</span>
-                      <span className="metric-value">orders (id, user_id, product_name, price, status)</span>
+                      <span className="metric-label">Orders Table</span>
+                      <span className="metric-value">id, user_id, product_name, price, status</span>
                     </div>
                     <div className="metric-row">
-                      <span className="metric-label">Isolation Pattern</span>
+                      <span className="metric-label">Database Isolation</span>
                       <span className="metric-value">Database-per-Service</span>
                     </div>
                   </div>
@@ -561,12 +623,39 @@ spring:
               </div>
             )}
 
-            {/* TELEMETRY & OBSERVABILITY TAB */}
-            {navSection === 'observability' && (
+            {/* 8. REDIS & NOSQL CACHING SECTION */}
+            {activeSection === 'nosql' && (
               <div>
                 <div style={{ marginBottom: '24px' }}>
-                  <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Observability, Prometheus Metrics & Distributed Tracing</h1>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Real-time telemetry collectors integrated across all Spring Boot 3 Actuator endpoints.</p>
+                  <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Redis & NoSQL Caching Strategy</h1>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>High-performance distributed memory caching for session invalidation & rate limiting.</p>
+                </div>
+
+                <div className="grid-container">
+                  <div className="glass-card">
+                    <div className="card-header">
+                      <div className="card-title">⚡ Redis Cache Strategy</div>
+                      <span className="card-badge badge-amber">Key-Value Store</span>
+                    </div>
+                    <div className="metric-row">
+                      <span className="metric-label">Cache Target</span>
+                      <span className="metric-value">JWT Blacklist & Rate Limiting</span>
+                    </div>
+                    <div className="metric-row">
+                      <span className="metric-label">Read Latency</span>
+                      <span className="metric-value" style={{ color: 'var(--accent-emerald)' }}>&lt; 1 ms</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 9. TELEMETRY & OBSERVABILITY SECTION */}
+            {activeSection === 'telemetry' && (
+              <div>
+                <div style={{ marginBottom: '24px' }}>
+                  <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Prometheus Metrics & Distributed Tracing</h1>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>OpenTelemetry tracing and Spring Boot Actuator metric collection.</p>
                 </div>
 
                 <div className="grid-container">
@@ -575,9 +664,9 @@ spring:
                       <div className="card-title">🔥 Prometheus Scraper</div>
                       <span className="card-badge badge-amber">Port 9090</span>
                     </div>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>Scrapes `/actuator/prometheus` metrics for request count, latency histogram, and JVM garbage collection.</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>Scrapes `/actuator/prometheus` for JVM memory, CPU utilization, and HTTP request throughput.</p>
                     <a href="http://34.72.32.205:9090" target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'inline-block', textDecoration: 'none' }}>
-                      Launch Prometheus Dashboard ↗
+                      Open Prometheus Metrics Dashboard ↗
                     </a>
                   </div>
 
@@ -586,17 +675,17 @@ spring:
                       <div className="card-title">🔎 Zipkin / Jaeger Tracing</div>
                       <span className="card-badge badge-purple">Port 9411</span>
                     </div>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>Tracks end-to-end distributed transaction spans across API Gateway, Order Service, and Notification Service.</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>Traces requests across Gateway $\rightarrow$ Order Service $\rightarrow$ Notification Service with `traceId` & `spanId`.</p>
                     <a href="http://34.72.32.205:9411" target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'inline-block', textDecoration: 'none' }}>
-                      Launch Zipkin Tracing UI ↗
+                      Open Zipkin Distributed Tracing UI ↗
                     </a>
                   </div>
                 </div>
               </div>
             )}
-          </div>
-        )}
-      </main>
+          </main>
+        </div>
+      )}
     </div>
   );
 }
