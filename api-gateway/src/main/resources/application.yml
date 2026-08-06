@@ -10,15 +10,15 @@ spring:
   cloud:
     gateway:
       routes:
-        # Kubernetes DNS Route to Auth Service
+        # Route to Auth Service
         - id: auth-service
-          uri: ${AUTH_SERVICE_URL:http://auth-service.microservices.svc.cluster.local:8080}
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
           predicates:
             - Path=/auth/**
 
-        # Kubernetes DNS Route to Order Service with Circuit Breaker
+        # Route to Order Service with Circuit Breaker
         - id: order-service
-          uri: ${ORDER_SERVICE_URL:http://order-service.microservices.svc.cluster.local:8080}
+          uri: ${ORDER_SERVICE_URL:http://localhost:8082}
           predicates:
             - Path=/api/orders/**
           filters:
@@ -26,6 +26,12 @@ spring:
               args:
                 name: orderServiceCB
                 fallbackUri: forward:/fallback/orders
+
+        # Route to Notification Service (Email & Tracing)
+        - id: notification-service
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/notifications/**
 
 resilience4j:
   circuitbreaker:
