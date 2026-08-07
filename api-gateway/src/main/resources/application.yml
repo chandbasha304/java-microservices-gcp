@@ -42,12 +42,22 @@ resilience4j:
         waitDurationInOpenState: 10000ms
         permittedNumberOfCallsInHalfOpenState: 3
         automaticTransitionFromOpenToHalfOpenEnabled: true
+        registerHealthIndicator: true
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_URL:http://zipkin:9411/api/v2/spans}
 
 jwt:
   secret: 0123456789012345678901234567890123456789012345678901234567890123
