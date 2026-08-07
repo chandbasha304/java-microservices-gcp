@@ -25,4 +25,6 @@ public class OrderItem {
     private String productName;
 
     private BigDecimal price;
+
+    private String customerEmail;
 }

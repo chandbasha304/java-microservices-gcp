@@ -29,8 +29,8 @@ public class OrderController {
         List<OrderItem> orders = orderRepository.findAll();
         if (orders.isEmpty()) {
             // Seed initial records if empty
-            orderRepository.save(new OrderItem(null, "Enterprise Laptop", new BigDecimal("1200.00")));
-            orderRepository.save(new OrderItem(null, "Wireless Mouse", new BigDecimal("25.50")));
+            orderRepository.save(new OrderItem(null, "Enterprise Laptop", new BigDecimal("1200.00"), "bashasoft304@gmail.com"));
+            orderRepository.save(new OrderItem(null, "Wireless Mouse", new BigDecimal("25.50"), "bashasoft304@gmail.com"));
             orders = orderRepository.findAll();
         }
         return Map.of(

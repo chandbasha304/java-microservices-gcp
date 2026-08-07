@@ -32,7 +32,7 @@ export default function App() {
   // Form states
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ username: '', email: '', password: '', role: 'USER' });
-  const [orderForm, setOrderForm] = useState({ productName: '', price: '' });
+  const [orderForm, setOrderForm] = useState({ productName: '', price: '', customerEmail: '' });
   const [emailForm, setEmailForm] = useState({ toEmail: 'bashasoft304@gmail.com', subject: 'Microservice Order Confirmation', body: 'Your order was successfully placed via Spring Cloud API Gateway!' });
 
   // Data states
@@ -68,18 +68,20 @@ export default function App() {
   const handleCreateOrder = async (e) => {
     e.preventDefault();
     setLoading(true);
+    const targetRecipient = orderForm.customerEmail && orderForm.customerEmail.trim() ? orderForm.customerEmail.trim() : 'bashasoft304@gmail.com';
     try {
       const response = await fetch(`${API_BASE}/api/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productName: orderForm.productName,
-          price: parseFloat(orderForm.price)
+          price: parseFloat(orderForm.price),
+          customerEmail: orderForm.customerEmail
         })
       });
       if (response.ok) {
-        showAlert('success', `🎉 Order for '${orderForm.productName}' created! Automated Email dispatch triggered to bashasoft304@gmail.com via WebClient with Zipkin TraceId.`);
-        setOrderForm({ productName: '', price: '' });
+        showAlert('success', `🎉 Order for '${orderForm.productName}' created! Automated Email notification sent to ${targetRecipient}.`);
+        setOrderForm({ productName: '', price: '', customerEmail: '' });
         fetchOrders();
       } else {
         showAlert('error', 'Failed to create order.');
@@ -409,6 +411,16 @@ export default function App() {
                           value={orderForm.price}
                           onChange={e => setOrderForm({ ...orderForm, price: e.target.value })}
                           required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Customer Email (for instant notification)</label>
+                        <input
+                          type="email"
+                          className="form-input"
+                          placeholder="e.g. customer@domain.com (Optional)"
+                          value={orderForm.customerEmail}
+                          onChange={e => setOrderForm({ ...orderForm, customerEmail: e.target.value })}
                         />
                       </div>
                       <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={loading}>

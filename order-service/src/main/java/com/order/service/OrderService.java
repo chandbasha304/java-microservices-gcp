@@ -44,6 +44,10 @@ public class OrderService {
     }
 
     private void dispatchNotification(OrderItem order) {
+        String targetEmail = (order.getCustomerEmail() != null && !order.getCustomerEmail().trim().isEmpty()) 
+                ? order.getCustomerEmail().trim() 
+                : "bashasoft304@gmail.com";
+
         try {
             WebClient webClient = WebClient.builder()
                     .baseUrl(notificationServiceUrl)
@@ -52,7 +56,7 @@ public class OrderService {
             webClient.post()
                     .uri("/api/notifications/email")
                     .bodyValue(Map.of(
-                            "toEmail", "bashasoft304@gmail.com",
+                            "toEmail", targetEmail,
                             "subject", "Order Confirmation #" + order.getId(),
                             "body", "Your order for '" + order.getProductName() + "' ($" + order.getPrice() + ") was placed successfully."
                     ))

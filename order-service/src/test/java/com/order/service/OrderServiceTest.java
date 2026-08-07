@@ -35,8 +35,8 @@ public class OrderServiceTest {
     @DisplayName("POSITIVE CASE: Valid Order Creation & Persistence Commit")
     void testCreateOrder_Success_PositiveCase() {
         // Given
-        OrderItem inputItem = new OrderItem(null, "Gaming Monitor", new BigDecimal("350.00"));
-        OrderItem savedItem = new OrderItem(1L, "Gaming Monitor", new BigDecimal("350.00"));
+        OrderItem inputItem = new OrderItem(null, "Gaming Monitor", new BigDecimal("350.00"), "user@domain.com");
+        OrderItem savedItem = new OrderItem(1L, "Gaming Monitor", new BigDecimal("350.00"), "user@domain.com");
         when(orderRepository.save(any(OrderItem.class))).thenReturn(savedItem);
 
         // When
@@ -53,7 +53,7 @@ public class OrderServiceTest {
     @DisplayName("NEGATIVE CASE: Invalid Price (Zero or Negative) Triggers Transaction Rollback")
     void testCreateOrder_InvalidPrice_NegativeCase_Rollback() {
         // Given
-        OrderItem invalidItem = new OrderItem(null, "Faulty Item", new BigDecimal("-10.00"));
+        OrderItem invalidItem = new OrderItem(null, "Faulty Item", new BigDecimal("-10.00"), "user@domain.com");
 
         // When & Then
         IllegalArgumentException exception = assertThrows(
