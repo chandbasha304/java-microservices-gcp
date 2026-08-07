@@ -35,7 +35,7 @@
 		<!-- OpenTelemetry & Micrometer Tracing Dependencies -->
 		<dependency>
 			<groupId>io.micrometer</groupId>
-			<artifactId>micrometer-tracing-bridge-otel</artifactId>
+			<artifactId>micrometer-tracing-bridge-brave</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>io.opentelemetry</groupId>
