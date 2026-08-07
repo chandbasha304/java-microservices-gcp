@@ -22,7 +22,7 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String item;
+    private String productName;
 
-    private BigDecimal amount;
+    private BigDecimal price;
 }

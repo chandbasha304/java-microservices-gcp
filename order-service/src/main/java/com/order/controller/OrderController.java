@@ -21,6 +21,9 @@ public class OrderController {
     @Autowired
     private com.order.service.OrderService orderService;
 
+    @Autowired
+    private OrderRepository orderRepository;
+
     @GetMapping
     public Map<String, Object> getOrders() {
         List<OrderItem> orders = orderRepository.findAll();
