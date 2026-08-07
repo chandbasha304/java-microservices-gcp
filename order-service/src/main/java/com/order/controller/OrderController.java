@@ -19,7 +19,7 @@ import java.util.Map;
 public class OrderController {
 
     @Autowired
-    private OrderRepository orderRepository;
+    private com.order.service.OrderService orderService;
 
     @GetMapping
     public Map<String, Object> getOrders() {
@@ -41,7 +41,7 @@ public class OrderController {
 
     @PostMapping
     public OrderItem createOrder(@RequestBody OrderItem item) {
-        return orderRepository.save(item);
+        return orderService.createOrder(item);
     }
 
     @GetMapping("/ai-recommendation")

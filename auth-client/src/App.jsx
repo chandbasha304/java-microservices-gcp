@@ -78,7 +78,7 @@ export default function App() {
         })
       });
       if (response.ok) {
-        showAlert('success', `Order created successfully for ${orderForm.productName}!`);
+        showAlert('success', `🎉 Order for '${orderForm.productName}' created! Automated Email dispatch triggered to bashasoft304@gmail.com via WebClient with Zipkin TraceId.`);
         setOrderForm({ productName: '', price: '' });
         fetchOrders();
       } else {
@@ -907,7 +907,7 @@ public class GlobalExceptionHandler {
                       <span className="card-badge badge-amber">Port 9090</span>
                     </div>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>Scrapes `/actuator/prometheus` for JVM memory, CPU utilization, and HTTP request throughput.</p>
-                    <a href="http://34.72.32.205:9090" target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'inline-block', textDecoration: 'none' }}>
+                    <a href="http://34.123.209.238:9090" target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'inline-block', textDecoration: 'none' }}>
                       Open Prometheus Metrics Dashboard ↗
                     </a>
                   </div>
@@ -918,7 +918,7 @@ public class GlobalExceptionHandler {
                       <span className="card-badge badge-purple">Port 9411</span>
                     </div>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>Traces requests across Gateway $\rightarrow$ Order Service $\rightarrow$ Notification Service with `traceId` & `spanId`.</p>
-                    <a href="http://34.72.32.205:9411" target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'inline-block', textDecoration: 'none' }}>
+                    <a href="http://34.123.209.238:9411" target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'inline-block', textDecoration: 'none' }}>
                       Open Zipkin Distributed Tracing UI ↗
                     </a>
                   </div>

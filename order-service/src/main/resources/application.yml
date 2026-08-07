@@ -18,6 +18,10 @@ spring:
       ddl-auto: update
     show-sql: true
 
+notification:
+  service:
+    url: ${NOTIFICATION_SERVICE_URL:http://notification-service:8083}
+
 management:
   endpoints:
     web:
